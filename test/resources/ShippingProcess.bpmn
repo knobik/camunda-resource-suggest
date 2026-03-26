@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_4" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.45.0-dev">
+  <bpmn:process id="ShippingProcess" name="Shipping Process" isExecutable="true">
+    <bpmn:startEvent id="Start_Shipping" name="Shipment Requested">
+      <bpmn:outgoing>Flow_S1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="CreateLabel" name="Create Shipping Label" camunda:delegateExpression="${createLabelDelegate}">
+      <bpmn:incoming>Flow_S1</bpmn:incoming>
+      <bpmn:outgoing>Flow_S2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_Shipping" name="Shipped">
+      <bpmn:incoming>Flow_S2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_S1" sourceRef="Start_Shipping" targetRef="CreateLabel" />
+    <bpmn:sequenceFlow id="Flow_S2" sourceRef="CreateLabel" targetRef="End_Shipping" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_4">
+    <bpmndi:BPMNPlane id="BPMNPlane_4" bpmnElement="ShippingProcess">
+      <bpmndi:BPMNShape id="Start_Shipping_di" bpmnElement="Start_Shipping">
+        <dc:Bounds x="179" y="109" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CreateLabel_di" bpmnElement="CreateLabel">
+        <dc:Bounds x="270" y="87" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Shipping_di" bpmnElement="End_Shipping">
+        <dc:Bounds x="432" y="109" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_S1_di" bpmnElement="Flow_S1">
+        <di:waypoint x="215" y="127" />
+        <di:waypoint x="270" y="127" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_S2_di" bpmnElement="Flow_S2">
+        <di:waypoint x="370" y="127" />
+        <di:waypoint x="432" y="127" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

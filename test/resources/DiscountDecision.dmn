@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="Definitions_1" name="DRD" namespace="http://camunda.org/schema/1.0/dmn">
+  <decision id="DiscountDecision" name="Discount Decision">
+    <decisionTable id="DecisionTable_1">
+      <input id="Input_1" label="Order Amount">
+        <inputExpression id="InputExpression_1" typeRef="double">
+          <text>orderAmount</text>
+        </inputExpression>
+      </input>
+      <output id="Output_1" label="Discount %" name="discountPercent" typeRef="integer" />
+      <rule id="Rule_1">
+        <inputEntry id="UnaryTests_1"><text>&gt; 1000</text></inputEntry>
+        <outputEntry id="LiteralExpression_1"><text>15</text></outputEntry>
+      </rule>
+      <rule id="Rule_2">
+        <inputEntry id="UnaryTests_2"><text>&gt; 500</text></inputEntry>
+        <outputEntry id="LiteralExpression_2"><text>10</text></outputEntry>
+      </rule>
+      <rule id="Rule_3">
+        <inputEntry id="UnaryTests_3"><text>&lt;= 500</text></inputEntry>
+        <outputEntry id="LiteralExpression_3"><text>0</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -1,0 +1,27 @@
+{
+  "id": "OrderReviewForm",
+  "name": "Order Review Form",
+  "type": "default",
+  "components": [
+    {
+      "key": "orderId",
+      "label": "Order ID",
+      "type": "textfield"
+    },
+    {
+      "key": "customerName",
+      "label": "Customer Name",
+      "type": "textfield"
+    },
+    {
+      "key": "totalAmount",
+      "label": "Total Amount",
+      "type": "number"
+    },
+    {
+      "key": "approved",
+      "label": "Approve Order",
+      "type": "checkbox"
+    }
+  ]
+}

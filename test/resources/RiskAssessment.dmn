@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="Definitions_2" name="DRD" namespace="http://camunda.org/schema/1.0/dmn">
+  <decision id="RiskAssessment" name="Risk Assessment">
+    <decisionTable id="DecisionTable_2">
+      <input id="Input_2" label="Customer Type">
+        <inputExpression id="InputExpression_2" typeRef="string">
+          <text>customerType</text>
+        </inputExpression>
+      </input>
+      <output id="Output_2" label="Risk Level" name="riskLevel" typeRef="string" />
+      <rule id="Rule_4">
+        <inputEntry id="UnaryTests_4"><text>"new"</text></inputEntry>
+        <outputEntry id="LiteralExpression_4"><text>"high"</text></outputEntry>
+      </rule>
+      <rule id="Rule_5">
+        <inputEntry id="UnaryTests_5"><text>"returning"</text></inputEntry>
+        <outputEntry id="LiteralExpression_5"><text>"low"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

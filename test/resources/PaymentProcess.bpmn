@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_3" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.45.0-dev">
+  <bpmn:process id="PaymentProcess" name="Payment Process" isExecutable="true">
+    <bpmn:startEvent id="Start_Payment" name="Payment Requested">
+      <bpmn:outgoing>Flow_P1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="ChargeCard" name="Charge Card" camunda:delegateExpression="${chargeCardDelegate}">
+      <bpmn:incoming>Flow_P1</bpmn:incoming>
+      <bpmn:outgoing>Flow_P2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_Payment" name="Payment Done">
+      <bpmn:incoming>Flow_P2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_P1" sourceRef="Start_Payment" targetRef="ChargeCard" />
+    <bpmn:sequenceFlow id="Flow_P2" sourceRef="ChargeCard" targetRef="End_Payment" />
+  </bpmn:process>
+  <bpmn:message id="Message_PaymentRequest" name="payment-request" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_3">
+    <bpmndi:BPMNPlane id="BPMNPlane_3" bpmnElement="PaymentProcess">
+      <bpmndi:BPMNShape id="Start_Payment_di" bpmnElement="Start_Payment">
+        <dc:Bounds x="179" y="109" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ChargeCard_di" bpmnElement="ChargeCard">
+        <dc:Bounds x="270" y="87" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Payment_di" bpmnElement="End_Payment">
+        <dc:Bounds x="432" y="109" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_P1_di" bpmnElement="Flow_P1">
+        <di:waypoint x="215" y="127" />
+        <di:waypoint x="270" y="127" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_P2_di" bpmnElement="Flow_P2">
+        <di:waypoint x="370" y="127" />
+        <di:waypoint x="432" y="127" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
