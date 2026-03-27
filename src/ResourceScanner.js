@@ -14,14 +14,22 @@ const EXTENSIONS = {
   '.form': 'form'
 };
 
+/**
+ * Normalize path separators to forward slashes for consistent comparison
+ * across platforms (Windows backslashes vs Unix forward slashes).
+ */
+export function normalizePath(p) {
+  return p ? p.replace(/\\/g, '/') : '';
+}
+
 export default class ResourceScanner {
 
   constructor(scanRoot) {
-    this._scanRoot = scanRoot || '';
+    this._scanRoot = normalizePath(scanRoot);
   }
 
   setScanRoot(scanRoot) {
-    this._scanRoot = scanRoot || '';
+    this._scanRoot = normalizePath(scanRoot);
   }
 
   scan(items) {
@@ -110,10 +118,12 @@ export default class ResourceScanner {
   }
 
   _getRelativePath(filePath) {
-    if (this._scanRoot && filePath.startsWith(this._scanRoot)) {
-      let relative = filePath.substring(this._scanRoot.length);
+    const normalized = normalizePath(filePath);
 
-      if (relative.startsWith('/') || relative.startsWith('\\')) {
+    if (this._scanRoot && normalized.startsWith(this._scanRoot)) {
+      let relative = normalized.substring(this._scanRoot.length);
+
+      if (relative.startsWith('/')) {
         relative = relative.substring(1);
       }
 

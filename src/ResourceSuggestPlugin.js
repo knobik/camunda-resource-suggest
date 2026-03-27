@@ -14,42 +14,31 @@ export default class ResourceSuggestPlugin extends PureComponent {
 
     const { subscribe, settings, config, _getGlobal } = props;
 
-    this._backend = _getGlobal('backend');
     this._config = config;
+    this._settings = settings;
     this._scanner = new ResourceScanner();
     this._currentDirectory = null;
     this._interceptor = null;
+    this._useTextFallback = false;
     this.resources = [];
+    this._lastResourceHash = '';
 
-    settings.register({
-      id: SETTINGS_ID,
-      title: 'Resource Suggest',
-      order: 10,
-      properties: {
-        [SETTINGS_KEY_DIRECTORY]: {
-          type: 'custom',
-          component: (componentProps) => DirectoryPicker({
-            ...componentProps,
-            getGlobal: _getGlobal,
-            config,
-            onDirectoryChanged: (path) => this._onDirectoryChanged(path)
-          }),
-          description: 'Directory to scan for BPMN, DMN, and Form files.'
-        }
-      }
+    // Defer settings registration so the DOM is available for version detection.
+    // The settings dialog is opened manually by the user, so this is safe.
+    // We pre-load the saved directory to use as the default value for the text field.
+    this._config.getForPlugin(PLUGIN_NAME, CONFIG_KEY).then((savedDir) => {
+      setTimeout(() => this._registerSettings(_getGlobal, config, settings, savedDir || ''), 0);
     });
 
-    this._fileContextDebounce = null;
-    this._lastResourceHash = '';
-    this._directoryLoaded = false;
-    this._fileContextSubscription = this._backend.on('file-context:changed', (_event, items) => {
-      console.log('[ResourceSuggest] file-context:changed', 'directoryLoaded:', this._directoryLoaded, 'items:', items?.length, 'currentDir:', this._currentDirectory);
-      if (!this._directoryLoaded) return;
+    // Listen for scan results from the menu.js backend (main process).
+    subscribe('resource-suggest.files', ({ directory, items }) => {
+      console.log('[ResourceSuggest] received backend scan', 'directory:', directory, 'items:', items?.length);
 
-      clearTimeout(this._fileContextDebounce);
-      this._fileContextDebounce = setTimeout(() => {
-        this._onFileContextChanged(items);
-      }, 500);
+      if (directory && items) {
+        this._currentDirectory = directory;
+        this._scanner.setScanRoot(directory);
+        this._processItems(items);
+      }
     });
 
     this._loadSavedDirectory();
@@ -72,11 +61,6 @@ export default class ResourceSuggestPlugin extends PureComponent {
       this._containerWatcher.disconnect();
     }
 
-    if (this._fileContextSubscription) {
-      this._fileContextSubscription.cancel();
-    }
-
-    clearTimeout(this._fileContextDebounce);
     clearTimeout(this._containerCheckDebounce);
   }
 
@@ -123,49 +107,108 @@ export default class ResourceSuggestPlugin extends PureComponent {
     }
   }
 
+  _registerSettings(_getGlobal, config, settings, savedDir) {
+    const supportsCustom = this._supportsCustomSettings();
+
+    if (supportsCustom) {
+      settings.register({
+        id: SETTINGS_ID,
+        title: 'Resource Suggest',
+        order: 10,
+        properties: {
+          [SETTINGS_KEY_DIRECTORY]: {
+            type: 'custom',
+            component: (componentProps) => DirectoryPicker({
+              ...componentProps,
+              getGlobal: _getGlobal,
+              config,
+              onDirectoryChanged: (path) => this._onDirectoryChanged(path)
+            }),
+            description: 'Directory to scan for BPMN, DMN, and Form files.'
+          }
+        }
+      });
+    } else {
+      this._useTextFallback = true;
+
+      settings.register({
+        id: SETTINGS_ID,
+        title: 'Resource Suggest',
+        order: 10,
+        properties: {
+          [SETTINGS_KEY_DIRECTORY]: {
+            type: 'text',
+            label: 'Scan directory',
+            default: savedDir,
+            description: 'Absolute path to directory with BPMN, DMN, and Form files.'
+          }
+        }
+      });
+
+      // Listen for text field changes via the settings system.
+      settings.subscribe(SETTINGS_KEY_DIRECTORY, ({ value }) => {
+        const dir = (value || '').trim();
+
+        // Keep plugin config in sync so both storage paths stay consistent.
+        this._config.setForPlugin(PLUGIN_NAME, CONFIG_KEY, dir);
+        this._onDirectoryChanged(dir || null);
+      });
+    }
+
+    console.log('[ResourceSuggest] settings registered, customType:', supportsCustom);
+  }
+
+  /**
+   * Detect whether the modeler supports `type: 'custom'` in settings (v5.43+).
+   * Reads the version from the status bar button rendered by the VersionInfo plugin.
+   */
+  _supportsCustomSettings() {
+    const button = document.querySelector('[title="Toggle version info"]');
+
+    if (button) {
+      const match = button.textContent.match(/v?(\d+)\.(\d+)/);
+
+      if (match) {
+        const major = parseInt(match[1], 10);
+        const minor = parseInt(match[2], 10);
+        return major > 5 || (major === 5 && minor >= 43);
+      }
+    }
+
+    // If we can't determine the version, fall back to text (safe default).
+    return false;
+  }
+
   async _loadSavedDirectory() {
     const savedDir = await this._config.getForPlugin(PLUGIN_NAME, CONFIG_KEY);
 
     if (savedDir) {
-      this._addRoot(savedDir);
+      this._currentDirectory = savedDir;
+      this._scanner.setScanRoot(savedDir);
     }
-
-    this._directoryLoaded = true;
   }
 
   _onDirectoryChanged(newDirectory) {
-    if (this._currentDirectory) {
-      this._removeRoot(this._currentDirectory);
-    }
-
     this.resources = [];
     this._lastResourceHash = '';
 
     if (newDirectory) {
-      this._addRoot(newDirectory);
+      this._currentDirectory = newDirectory;
+      this._scanner.setScanRoot(newDirectory);
+    } else {
+      this._currentDirectory = null;
+    }
+
+    if (this._interceptor) {
+      this._interceptor.updateResources(this.resources);
     }
   }
 
-  _addRoot(directory) {
-    this._currentDirectory = directory;
-    this._scanner.setScanRoot(directory);
-    this._backend.send('file-context:add-root', { filePath: directory });
-  }
-
-  _removeRoot(directory) {
-    this._backend.send('file-context:remove-root', { filePath: directory });
-    this._currentDirectory = null;
-  }
-
-  _onFileContextChanged(items) {
-    const filteredItems = this._currentDirectory
-      ? items.filter(item => item.file && item.file.path && item.file.path.startsWith(this._currentDirectory))
-      : [];
-
-    const newResources = this._scanner.scan(filteredItems);
+  _processItems(items) {
+    const newResources = this._scanner.scan(items);
     const newHash = newResources.map(r => `${r.type}:${r.id}:${r.filePath}`).sort().join('|');
 
-    console.log('[ResourceSuggest] _onFileContextChanged', 'filtered:', filteredItems.length, 'resources:', newResources.length, 'hashChanged:', newHash !== this._lastResourceHash);
+    console.log('[ResourceSuggest] _processItems', 'items:', items.length, 'resources:', newResources.length, 'hashChanged:', newHash !== this._lastResourceHash);
 
     if (newHash === this._lastResourceHash) {
       return;
