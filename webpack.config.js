@@ -9,14 +9,9 @@ module.exports = {
     filename: 'client.js'
   },
   devtool: 'cheap-module-source-map',
-  resolve: {
-    alias: {
-      '@bpmn-io/properties-panel': 'camunda-modeler-plugin-helpers/vendor/@bpmn-io/properties-panel'
-    }
-  },
   plugins: [
     new CamundaModelerWebpackPlugin({
-      type: 'react'
+      type: 'propertiesPanel'
     })
   ]
 };

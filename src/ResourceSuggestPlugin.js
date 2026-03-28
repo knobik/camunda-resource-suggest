@@ -1,5 +1,3 @@
-import React, { PureComponent } from 'react';
-
 import DirectoryPicker from './settings/DirectoryPicker';
 import ResourceScanner, { PLUGIN_NAME, CONFIG_KEY } from './ResourceScanner';
 import FieldInterceptor from './FieldInterceptor';
@@ -7,10 +5,10 @@ import FieldInterceptor from './FieldInterceptor';
 const SETTINGS_ID = 'resourceSuggest';
 const SETTINGS_KEY_DIRECTORY = `${SETTINGS_ID}.scanDirectory`;
 
-export default class ResourceSuggestPlugin extends PureComponent {
+export default class ResourceSuggestPlugin {
 
   constructor(props) {
-    super(props);
+    this.props = props;
 
     const { subscribe, settings, config, _getGlobal } = props;
 
@@ -226,3 +224,5 @@ export default class ResourceSuggestPlugin extends PureComponent {
     return null;
   }
 }
+
+ResourceSuggestPlugin.prototype.isReactComponent = {};
