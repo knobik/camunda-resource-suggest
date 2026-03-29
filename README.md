@@ -30,7 +30,7 @@ Replaces plain text inputs for resource references with searchable comboboxes th
 
 1. Clone or download this repository into your Camunda Modeler plugins directory:
    ```
-   ~/.config/camunda-modeler/plugins/resource-suggest
+   camunda-modeler/resources/plugins/resource-suggest
    ```
 
 2. Install dependencies and build:
