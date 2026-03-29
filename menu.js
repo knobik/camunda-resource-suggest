@@ -76,6 +76,83 @@ function scanAndEmit(app) {
 }
 
 let initialized = false;
+let directoryWatcher = null;
+let configWatcher = null;
+let debounceTimer = null;
+let configDebounceTimer = null;
+let watchedDirectory = null;
+
+function stopDirectoryWatcher() {
+  clearTimeout(debounceTimer);
+  debounceTimer = null;
+  if (directoryWatcher) {
+    directoryWatcher.close();
+    directoryWatcher = null;
+  }
+}
+
+function startDirectoryWatcher(app) {
+  stopDirectoryWatcher();
+
+  watchedDirectory = readConfig();
+  if (!watchedDirectory) {
+    return;
+  }
+
+  try {
+    directoryWatcher = fs.watch(watchedDirectory, { recursive: true }, (_eventType, filename) => {
+      if (filename) {
+        const ext = nodePath.extname(filename).toLowerCase();
+        if (!EXTENSIONS.has(ext)) {
+          return;
+        }
+      }
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        scanAndEmit(app);
+      }, 500);
+    });
+
+    directoryWatcher.on('error', () => stopDirectoryWatcher());
+  } catch (err) {
+    // Directory doesn't exist or can't be watched
+  }
+}
+
+function stopConfigWatcher() {
+  clearTimeout(configDebounceTimer);
+  configDebounceTimer = null;
+  if (configWatcher) {
+    configWatcher.close();
+    configWatcher = null;
+  }
+}
+
+function startConfigWatcher(app) {
+  stopConfigWatcher();
+
+  const configPath = nodePath.join(electronApp.getPath('userData'), 'config.json');
+
+  try {
+    configWatcher = fs.watch(configPath, () => {
+      clearTimeout(configDebounceTimer);
+      configDebounceTimer = setTimeout(() => {
+        configDebounceTimer = null;
+        const newDir = readConfig();
+        if (newDir !== watchedDirectory) {
+          scanAndEmit(app);
+          startDirectoryWatcher(app);
+        }
+      }, 300);
+    });
+
+    configWatcher.on('error', () => stopConfigWatcher());
+  } catch (err) {
+    // Config file doesn't exist yet
+  }
+}
 
 module.exports = function(app) {
 
@@ -84,7 +161,16 @@ module.exports = function(app) {
 
     app.on('app:client-ready', () => {
       // Delay to let the renderer plugin finish mounting
-      setTimeout(() => scanAndEmit(app), 1000);
+      setTimeout(() => {
+        scanAndEmit(app);
+        startDirectoryWatcher(app);
+        startConfigWatcher(app);
+      }, 1000);
+    });
+
+    app.on('quit', () => {
+      stopDirectoryWatcher();
+      stopConfigWatcher();
     });
   }
 
